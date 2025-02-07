@@ -16,11 +16,53 @@ jobs:
       - name: Install dependencies
         run: dotnet restore
       - name: Build
-        run: dotnet build --configuration Release -o build ShotYourPet.Timeline/ShotYourPet.Timeline.csproj
+        run: dotnet build
       - name: Test with the dotnet CLI
-        run: dotnet test --configuration Release -o build ShotYourPet.Timeline/ShotYourPet.Timeline.csproj
+        run: dotnet test
+      - name: Build artifacts
+        run: dotnet publish "ShotYourPet.Timeline/ShotYourPet.Timeline.csproj" -c Release -o build /p:UseAppHost=false
       - name: Upload dotnet test results
         uses: actions/upload-artifact@v4
         with:
           name: dotnet-results
           path: build
+  package:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: build
+      - name: Log in to the Container registry
+        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@369eb591f429131d6889c46b94e711f089e6ca96
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/timeline
+      - name: Build and push Docker images
+        id: push
+        uses: docker/build-push-action@48aba3b46d1b1fec4febb7c5d0c644b249a11355
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+      - name: Generate artifact attestation
+        uses: actions/attest-build-provenance@7668571508540a607bdfd90a87a560489fe372eb
+        with:
+          subject-name: ghcr.io/${{ github.repository_owner }}/timeline
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
