@@ -1,0 +1,25 @@
+name: dotnet package
+on: [ push ]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup dotnet
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.x'
+          cache: true
+      - name: Display dotnet version
+        run: dotnet --version
+      - name: Install dependencies
+        run: dotnet restore
+      - name: Build
+        run: dotnet build --configuration Release -o build ShotYourPet.Timeline/ShotYourPet.Timeline.csproj
+      - name: Test with the dotnet CLI
+        run: dotnet test --configuration Release -o build ShotYourPet.Timeline/ShotYourPet.Timeline.csproj
+      - name: Upload dotnet test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: dotnet-results
+          path: build
