@@ -1,0 +1,6 @@
+@ShotYourPet.Timeline_HostAddress = http://localhost:5192
+
+GET {{ShotYourPet.Timeline_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
