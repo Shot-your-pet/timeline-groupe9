@@ -61,7 +61,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
       - name: Generate artifact attestation
-        uses: actions/attest-build-provenance@7668571508540a607bdfd90a87a560489fe372eb
+        uses: actions/attest-build-provenance@bd77c077858b8d561b7a36cbe48ef4cc642ca39d
         with:
           subject-name: ghcr.io/${{ github.repository_owner }}/timeline
           subject-digest: ${{ steps.push.outputs.digest }}
