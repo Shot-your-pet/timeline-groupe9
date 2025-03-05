@@ -1,0 +1,31 @@
+services:
+  database:
+    image: postgres
+    restart: always
+    # set shared memory limit when using docker-compose
+    shm_size: 128mb
+    environment:
+      POSTGRES_PASSWORD: postgres
+  rabbit:
+    image: rabbitmq:4-management
+    environment:
+      RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: -rabbitmq -setcookie mycookie
+    ports:
+      - "15672:15672"
+    healthcheck:
+      test: rabbitmq-diagnostics check_port_connectivity --erlang-cookie "mycookie"
+      interval: 5s
+      timeout: 30s
+      retries: 10
+  timeline:
+    depends_on:
+      rabbit:
+        condition: service_healthy
+      database:
+        condition: service_started
+    build:
+      dockerfile: Dockerfile
+      context: .
+    environment:
+      ConnectionStrings__ShotYourPet: Host=database;Database=postgres;Password=postgres;Username=postgres
+      ConnectionStrings__RabbitMQ: amqp://guest:guest@rabbit:5672/

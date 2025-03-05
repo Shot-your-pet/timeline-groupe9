@@ -10,12 +10,22 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.1"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.2">
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
     </ItemGroup>
 
     <ItemGroup>
         <Content Include="..\.dockerignore">
             <Link>.dockerignore</Link>
         </Content>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\ShotYourPet.Database\ShotYourPet.Database.csproj"/>
+        <ProjectReference Include="..\ShotYourPet.Messaging\ShotYourPet.Messaging.fsproj"/>
+        <ProjectReference Include="..\ShotYourPet.Migrations\ShotYourPet.Migrations.csproj"/>
     </ItemGroup>
 
 </Project>
