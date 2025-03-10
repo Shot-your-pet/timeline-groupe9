@@ -64,7 +64,7 @@ module Client =
                     let! connection = connectionFactory.CreateConnectionAsync(cancellationToken=stoppingToken)
                     let! channel = connection.CreateChannelAsync(cancellationToken=stoppingToken)
 
-                    let! exchange = channel.ExchangeDeclareAsync("broadcast", ExchangeType.Fanout, cancellationToken=stoppingToken)
+                    let! exchange = channel.ExchangeDeclareAsync("broadcast", ExchangeType.Fanout, durable=true, cancellationToken=stoppingToken)
 
                     let! queue = channel.QueueDeclareAsync("timeline", false, false, false, cancellationToken=stoppingToken)
 
