@@ -26,4 +26,12 @@ public class Post
     public long Id { get; init; }
 
     [Required] public Author Author { get; init; } = null!;
+
+    public long ChallengeId { get; init; }
+
+    public string? Content { get; init; }
+
+    public DateTime PublishedAt { get; init; }
+
+    public long ImageId { get; init; }
 }
