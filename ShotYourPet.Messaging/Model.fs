@@ -11,7 +11,7 @@ type NewPublication = {
       [<JsonPropertyName("author_id")>]
       AuthorId: Guid
       [<JsonPropertyName("date")>]
-      Date: DateTime
+      Date: DateTimeOffset
       [<JsonPropertyName("description")>]
       Description: string | null
       [<JsonPropertyName("image_id")>]
@@ -31,13 +31,13 @@ and EventConverter() =
       inherit JsonConverter<PublishingEvent>()
      
       override this.Read(reader, typeToConvert, options) =
-            let item = JsonObject.Parse( &reader,  JsonNodeOptions()).AsObject()
+            let item = JsonObject.Parse(&reader,  JsonNodeOptions()).AsObject()
             let content = item["content"]
             let content =
                   match item["type"].GetValue<string>() with
                   | "new_publication" -> EventContent.NewPublication(content.Deserialize<NewPublication>())
                   | "like" ->  EventContent.PublicationLiked(content.Deserialize<PublicationLiked>())
-                  | s -> failwithf $"unknown item type %s{s}"
+                  | s -> raise (JsonException( $"unknown item type %s{s}"))
             { Content = content }
             
       override this.Write(writer, value, options) = failwith "not implemented"
