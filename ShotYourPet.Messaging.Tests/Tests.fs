@@ -39,6 +39,21 @@ type PublishingEventTests() =
         | _ -> Assert.True(false, "Expected NewPublication event")
 
     [<Fact>]
+    member this.``Deserialize NewPublication Event no content``() =
+        // Arrange
+        let json =
+            """
+        {
+            "type": "new_publication",
+            "content": null
+        }"""
+
+        let ex =
+            Assert.Throws<JsonException>(fun () -> JsonSerializer.Deserialize<PublishingEvent>(json) |> ignore)
+
+        Assert.Contains("Missing content", ex.Message)
+
+    [<Fact>]
     member this.``Deserialize PublicationLiked Event``() =
         // Arrange
         let json =
@@ -62,6 +77,21 @@ type PublishingEventTests() =
         | _ -> Assert.True(false, "Expected PublicationLiked event")
 
     [<Fact>]
+    member this.``Deserialize PublicationLiked Event no content``() =
+        // Arrange
+        let json =
+            """
+        {
+            "type": "like",
+            "content": null
+        }"""
+
+        let ex =
+            Assert.Throws<JsonException>(fun () -> JsonSerializer.Deserialize<PublishingEvent>(json) |> ignore)
+
+        Assert.Contains("Missing content", ex.Message)
+
+    [<Fact>]
     member this.``Deserialize Unknown Event Type``() =
         // Arrange
         let json =
@@ -75,6 +105,21 @@ type PublishingEventTests() =
         let ex =
             Assert.Throws<JsonException>(fun () -> JsonSerializer.Deserialize<PublishingEvent>(json) |> ignore)
 
-        Assert.Contains("unknown item type", ex.Message)
+        Assert.Contains("Unknown item type unknown_event", ex.Message)
+
+    [<Fact>]
+    member this.``Deserialize Missing Event Type``() =
+        // Arrange
+        let json =
+            """
+        {
+            "content": {}
+        }"""
+
+        // Act & Assert
+        let ex =
+            Assert.Throws<JsonException>(fun () -> JsonSerializer.Deserialize<PublishingEvent>(json) |> ignore)
+
+        Assert.Contains("Missing item type", ex.Message)
 
 // Additional tests can be added for edge cases, null values, etc.
