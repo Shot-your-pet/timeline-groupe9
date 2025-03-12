@@ -31,7 +31,7 @@ public class Post
 
     public string? Content { get; init; }
 
-    public DateTime PublishedAt { get; init; }
+    public DateTimeOffset PublishedAt { get; init; }
 
     public long ImageId { get; init; }
 }
