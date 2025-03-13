@@ -20,7 +20,7 @@ builder.Services.AddCors(cors => cors
         .AllowAnyMethod()
         .AllowAnyHeader()));
 
-builder.Services.AddHostedService<Client.MessageService>();
+builder.Services.AddHostedService<MessageService>();
 
 var app = builder.Build();
 
