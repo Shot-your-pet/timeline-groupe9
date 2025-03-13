@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ShotYourPet.Database;
@@ -7,7 +8,7 @@ using Post = ShotYourPet.Timeline.Model.Post;
 namespace ShotYourPet.Timeline.Controllers;
 
 [ApiController]
-[Route("[controller]")]
+[Route("/timeline")]
 public class TimelineController(ILogger<TimelineController> logger, TimelineDbContext context) : ControllerBase
 {
     private readonly ILogger<TimelineController> _logger = logger;
