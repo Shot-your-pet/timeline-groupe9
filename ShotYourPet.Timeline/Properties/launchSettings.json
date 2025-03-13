@@ -9,7 +9,10 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "ConnectionStrings__ShotYourPet": "Host=localhost;Database=postgres;Password=postgres;Username=postgres",
-        "ConnectionStrings__RabbitMQ": "amqp://guest:guest@localhost:5672/"
+        "ConnectionStrings__RabbitMQ": "amqp://guest:guest@localhost:5672/",
+        "RabbitMQ__TimelineExchangeName": "default",
+        "RabbitMQ__TimelineQueueName": "publication.publish_posts",
+        "RabbitMQ__TimelineRoutingKey": "publication.publication_events"
       }
     }
   }
