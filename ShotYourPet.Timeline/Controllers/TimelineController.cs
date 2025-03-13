@@ -18,14 +18,21 @@ public class TimelineController(ILogger<TimelineController> logger, TimelineDbCo
     /// <response code="200">OK</response>
     [HttpGet(Name = "GetTimeline")]
     public IEnumerable<Post> Get(long? cursor = null)
+    public IEnumerable<Post> Get(long? cursor = null, int limit = 25)
     {
-        return from p in context.Posts
+        var query = from p in context.Posts
             orderby p.Id descending
             where cursor == null || p.Id < cursor
             select new Post
             {
                 Id = p.Id,
-                AuthorId = p.Author.Id
+                AuthorId = p.Author.Id,
+                ChallengeId = p.ChallengeId,
+                PublishedAt = p.PublishedAt,
+                Content = p.Content,
+                ImageId = p.ImageId
             };
+
+        return query.Take(limit);
     }
 }
