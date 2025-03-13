@@ -14,3 +14,12 @@ public class Post
 
     public required long ImageId { get; init; }
 }
+
+public class CursoredPostList
+{
+    public required int Size { get; init; }
+
+    public required long? NextCursor { get; init; }
+
+    public required List<Post> Content { get; init; }
+}
