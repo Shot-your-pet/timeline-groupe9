@@ -1,25 +1,48 @@
+using System.ComponentModel;
+using System.Text.Json.Serialization;
+using JetBrains.Annotations;
+
 namespace ShotYourPet.Timeline.Model;
 
 public class Post
 {
+    [JsonPropertyName("id")]
+    [Description("Id of the post")]
     public required long Id { get; init; }
 
-    public required Guid AuthorId { get; init; }
+    [JsonPropertyName("author_id")]
+    [Description("UUID of the post author")]
+    public required Guid AuthorId { [UsedImplicitly] get; init; }
 
-    public required long ChallengeId { get; init; }
+    [JsonPropertyName("challenge_id")]
+    [Description("Id of the challenge associated with the post")]
+    public required long ChallengeId { [UsedImplicitly] get; init; }
 
-    public required DateTimeOffset PublishedAt { get; init; }
+    [JsonPropertyName("published_at")]
+    [Description("Publication date of the post")]
+    public required DateTimeOffset PublishedAt { [UsedImplicitly] get; init; }
 
-    public required string? Content { get; init; }
+    [JsonPropertyName("content")]
+    [Description("A small optional text attached to the post")]
+    public required string? Content { [UsedImplicitly] get; init; }
 
-    public required long ImageId { get; init; }
+    [JsonPropertyName("image_id")]
+    [Description("Id of the post image")]
+    public required long ImageId { [UsedImplicitly] get; init; }
 }
 
 public class CursoredPostList
 {
-    public required int Size { get; init; }
+    [JsonPropertyName("sizes")]
+    [Description("Size of content")]
+    public required int Size { [UsedImplicitly] get; init; }
 
-    public required long? NextCursor { get; init; }
+    [JsonPropertyName("next_cursor")]
+    [Description("Id of the next post list, or null if there is no element after content.")]
+    public required long? NextCursor { [UsedImplicitly] get; init; }
 
-    public required List<Post> Content { get; init; }
+
+    [JsonPropertyName("content")]
+    [Description("List of posts")]
+    public required List<Post> Content { [UsedImplicitly] get; init; }
 }

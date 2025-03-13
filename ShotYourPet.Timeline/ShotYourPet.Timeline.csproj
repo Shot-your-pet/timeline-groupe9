@@ -9,6 +9,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="JetBrains.Annotations" Version="2025.1.0-eap1" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.1"/>
         <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.2">
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

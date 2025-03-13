@@ -12,16 +12,17 @@ public class TimelineController(ILogger<TimelineController> logger, TimelineDbCo
 {
     private readonly ILogger<TimelineController> _logger = logger;
 
-    /// <summary>
-    ///     List all users
-    /// </summary>
-    /// <param name="cursor">String to search for in user IDs and names</param>
-    /// <returns>An array of users</returns>
-    /// <response code="200">OK</response>
-    [HttpGet(Name = "GetTimeline")]
-    public IEnumerable<Post> Get(long? cursor = null)
-    public IEnumerable<Post> Get(long? cursor = null, int limit = 25)
-    public async Task<CursoredPostList> Get(long? cursor = null, int limit = 25)
+    [HttpGet(Name = "Default timeline")]
+    [EndpointSummary("Get default timeline")]
+    [EndpointDescription("""
+                         Get the default timeline.
+                         This is the timeline with all posts, sorted by date descending.
+                         """)]
+    public async Task<CursoredPostList> Get(
+        [Description("Return posts posted before this id")]
+        long? cursor = null,
+        [Description("Number of elements to return, limited to 25")]
+        int limit = 25)
     {
         var query = from p in context.Posts
             orderby p.Id descending
