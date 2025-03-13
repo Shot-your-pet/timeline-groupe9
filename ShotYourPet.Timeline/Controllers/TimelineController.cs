@@ -40,9 +40,13 @@ public class TimelineController(ILogger<TimelineController> logger, TimelineDbCo
 
         var size = Math.Clamp(limit, 0, 25) + 1;
         var list = await query.Take(size).ToListAsync();
+
+        var totalSize = context.Posts.Count();
+
         return new CursoredPostList
         {
             Size = Math.Max(0, list.Count - 1),
+            TotalSize = totalSize,
             NextCursor = size == list.Count ? list.Skip(size - 1).FirstOrDefault()?.Id : null,
             Content = list.Count == size ? list[..^1] : list
         };
