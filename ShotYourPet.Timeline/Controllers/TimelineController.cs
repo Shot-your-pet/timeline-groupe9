@@ -51,4 +51,46 @@ public class TimelineController(ILogger<TimelineController> logger, TimelineDbCo
             Content = list.Count == size ? list[..^1] : list
         };
     }
+
+    [HttpGet("{authorId:guid}", Name = "Author timeline")]
+    [EndpointSummary("Get author timeline")]
+    [EndpointDescription("""
+                         Get post list of an author.
+                         This is the timeline with all posts of the author, sorted by date descending.
+                         """)]
+    public async Task<CursoredPostList> GetForAuthor(
+        [Description("Id of the author")]
+        Guid authorId,
+        [Description("Return posts posted before this id")]
+        long? cursor = null,
+        [Description("Number of elements to return, limited to 25")]
+        int limit = 25)
+    {
+        var query = from p in context.Posts
+            where p.Author.Id == authorId
+            orderby p.Id descending
+            where cursor == null || p.Id <= cursor
+            select new Post
+            {
+                Id = p.Id,
+                AuthorId = p.Author.Id,
+                ChallengeId = p.ChallengeId,
+                PublishedAt = p.PublishedAt,
+                Content = p.Content,
+                ImageId = p.ImageId
+            };
+
+        var size = Math.Clamp(limit, 0, 25) + 1;
+        var list = await query.Take(size).ToListAsync();
+
+        var totalSize = context.Posts.Count();
+
+        return new CursoredPostList
+        {
+            Size = size == list.Count ? list.Count - 1 : list.Count,
+            TotalSize = totalSize,
+            NextCursor = size == list.Count ? list.Skip(size - 1).FirstOrDefault()?.Id : null,
+            Content = list.Count == size ? list[..^1] : list
+        };
+    }
 }
