@@ -45,7 +45,7 @@ public class TimelineController(ILogger<TimelineController> logger, TimelineDbCo
 
         return new CursoredPostList
         {
-            Size = Math.Max(0, list.Count - 1),
+            Size = size == list.Count ? list.Count - 1 : list.Count,
             TotalSize = totalSize,
             NextCursor = size == list.Count ? list.Skip(size - 1).FirstOrDefault()?.Id : null,
             Content = list.Count == size ? list[..^1] : list
