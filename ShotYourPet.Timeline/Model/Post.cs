@@ -5,6 +5,7 @@ using JetBrains.Annotations;
 namespace ShotYourPet.Timeline.Model;
 
 public class Post
+public record Post
 {
     [JsonPropertyName("id")]
     [Description("Id of the post")]
@@ -31,7 +32,7 @@ public class Post
     public required long ImageId { [UsedImplicitly] get; init; }
 }
 
-public class CursoredPostList
+public record CursoredPostList
 {
     [JsonPropertyName("sizes")]
     [Description("Size of content")]
