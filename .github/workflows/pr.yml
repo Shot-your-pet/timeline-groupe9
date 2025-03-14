@@ -1,0 +1,31 @@
+name: PR
+on: 
+  push:
+    branches:
+      - '!main'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup dotnet
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.x'
+          cache: true
+          cache-dependency-path: "**/packages.lock.json"
+      - name: Display dotnet version
+        run: dotnet --version
+      - name: Install dependencies
+        run: dotnet restore
+      - name: Build
+        run: dotnet build
+      - name: Test with the dotnet CLI
+        run: dotnet test
+      - name: Build artifacts
+        run: dotnet publish "ShotYourPet.Timeline/ShotYourPet.Timeline.csproj" -c Release -o build /p:UseAppHost=false
+      - name: Upload dotnet test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: dotnet-results
+          path: build
