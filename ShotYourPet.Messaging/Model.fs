@@ -75,3 +75,16 @@ and EventConverter() =
         | None -> null
 
     override this.Write(_, _, _) = failwith "not implemented"
+
+
+type UserInformation =
+    { [<JsonPropertyName("idUtilisateur")>]
+      IdUser: Guid
+      [<JsonPropertyName("pseudo")>]
+      Pseudo: string
+      [<JsonPropertyName("idAvatar")>]
+      IdAvatar: Option<int64> }
+
+and UserQuery =
+    { [<JsonPropertyName("idKeycloak")>]
+      IdKeycloak: Guid }
