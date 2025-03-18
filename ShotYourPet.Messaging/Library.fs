@@ -28,20 +28,6 @@ type MessageService
 
             let rabbitMqConfiguration = configuration.GetSection "RabbitMQ"
 
-            let exchangeName =
-                rabbitMqConfiguration["TimelineExchangeName"]
-                |> Option.ofObj
-                |> Option.defaultValue ""
-
-            let queueName =
-                rabbitMqConfiguration["TimelineQueueName"]
-                |> Option.ofObj
-                |> Option.defaultValue "timeline.publish_posts"
-
-            let routingKey =
-                rabbitMqConfiguration["TimelineRoutingKey"]
-                |> Option.ofObj
-                |> Option.defaultValue "publication.publication_events"
 
             task {
                 let connectionString =
@@ -56,17 +42,8 @@ type MessageService
 
                 do! channel.BasicQosAsync(0u, uint16 1, false, stoppingToken)
 
-                // No need to bind if exchange is default
-                if exchangeName <> "" then
-                    do!
-                        channel.ExchangeDeclareAsync(
-                            exchangeName,
-                            ExchangeType.Direct,
-                            durable = true,
-                            autoDelete = false,
-                            cancellationToken = stoppingToken
-                        )
                 let! publicationQueue = getPublicationQueue rabbitMqConfiguration channel stoppingToken
+                let! userRpcClient = getUserQueue rabbitMqConfiguration channel stoppingToken logger
 
                 let consumer = ParsingConsumer(channel, logger, timelineDbContext)
 

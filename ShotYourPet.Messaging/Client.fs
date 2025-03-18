@@ -40,6 +40,63 @@ module private Client =
                     logger.LogError(e, "Failed to parse message")
             }
 
+    and UserRpcClient
+        (channel: IChannel, queryExchange: string, queryQueue: string, respondQueue: string, logger: ILogger) =
+        inherit AsyncDefaultBasicConsumer(channel)
+
+        let callbackMap =
+            ConcurrentDictionary<string, TaskCompletionSource<UserInformation>>()
+
+        override this.HandleBasicDeliverAsync(_, _, _, _, _, props, body, cancellationToken) =
+            match props.CorrelationId |> Option.ofObj with
+            | Some correlationId when correlationId.Length <> 0 ->
+                let found, value = callbackMap.TryRemove(correlationId)
+
+                if found then
+                    try
+                        match JsonSerializer.Deserialize<UserInformation>(body.Span) |> Option.ofObj with
+                        | Some info -> value.SetResult(info)
+                        | None -> failwith "Missing user information"
+                    with e ->
+                        value.SetException e
+            | _ -> ()
+
+            Task.CompletedTask
+
+        member public this.QueryInformationAsync(userId: Guid, cancellationToken: CancellationToken) =
+            task {
+                let correlationKey = Guid.NewGuid().ToString()
+
+                let props = BasicProperties(CorrelationId = correlationKey, ReplyTo = respondQueue)
+
+                let completionSource =
+                    TaskCompletionSource<UserInformation>(TaskCreationOptions.RunContinuationsAsynchronously)
+
+                if not (callbackMap.TryAdd(correlationKey, completionSource)) then
+                    failwith "Failed to register callback for result"
+
+                let content =
+                    JsonSerializer.SerializeToUtf8Bytes<UserQuery>({ IdKeycloak = userId })
+
+                do!
+                    channel.BasicPublishAsync(
+                        queryExchange,
+                        queryQueue,
+                        body = content,
+                        cancellationToken = cancellationToken,
+                        mandatory = true,
+                        basicProperties = props
+                    )
+
+                use _ =
+                    cancellationToken.Register(fun () ->
+                        callbackMap.TryRemove correlationKey |> ignore
+                        completionSource.SetCanceled())
+
+                return! completionSource.Task
+            }
+
+
     type MessageScopedService(connection: IConnection, logger: ILogger) =
         member this.StopAsync token =
             task { do! connection.CloseAsync(cancellationToken = token) }
@@ -92,3 +149,62 @@ module private Client =
             return queue
         }
 
+
+    let getUserQueue
+        (rabbitMqConfiguration: IConfiguration)
+        (channel: IChannel)
+        (stoppingToken: CancellationToken)
+        (logger: ILogger)
+        =
+        let exchangeName =
+            rabbitMqConfiguration["USER_INFO_EXCHANGE"]
+            |> Option.ofObj
+            |> Option.defaultValue ""
+
+        let queueName =
+            rabbitMqConfiguration["USER_INFO_QUEUE"]
+            |> Option.ofObj
+            |> Option.defaultValue "utilisateurs.infos_utilisateur"
+
+        task {
+            // No need to bind if exchange is default
+            if exchangeName <> "" then
+                do!
+                    channel.ExchangeDeclareAsync(
+                        exchangeName,
+                        ExchangeType.Direct,
+                        durable = true,
+                        autoDelete = false,
+                        cancellationToken = stoppingToken
+                    )
+
+            let! queryQueue =
+                channel.QueueDeclareAsync(
+                    queue = queueName,
+                    durable = true,
+                    exclusive = false,
+                    autoDelete = false,
+                    passive = true,
+                    cancellationToken = stoppingToken
+                )
+
+            let! respondQueue =
+                channel.QueueDeclareAsync(
+                    queue = "",
+                    durable = false,
+                    exclusive = false,
+                    autoDelete = false,
+                    passive = false,
+                    cancellationToken = stoppingToken
+                )
+
+            if exchangeName <> "" then
+                do! channel.QueueBindAsync(respondQueue.QueueName, exchangeName, "", cancellationToken = stoppingToken)
+
+            let rpcClient =
+                UserRpcClient(channel, exchangeName, queryQueue.QueueName, respondQueue.QueueName, logger)
+
+            let! _ = channel.BasicConsumeAsync(respondQueue.QueueName, true, rpcClient, stoppingToken)
+
+            return rpcClient
+        }
