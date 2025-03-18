@@ -128,7 +128,7 @@ module private Client =
             let queueName =
                 rabbitMqConfiguration["TimelineQueueName"]
                 |> Option.ofObj
-                |> Option.defaultValue "timeline.publish_posts"
+                |> Option.defaultValue "publication.publication_events"
 
             let routingKey =
                 rabbitMqConfiguration["TimelineRoutingKey"]
