@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ShotYourPet.Database;
 using ShotYourPet.Timeline.Model;
+using Author = ShotYourPet.Timeline.Model.Author;
 using Post = ShotYourPet.Timeline.Model.Post;
 
 namespace ShotYourPet.Timeline.Controllers;
@@ -31,7 +32,12 @@ public class TimelineController(ILogger<TimelineController> logger, TimelineDbCo
             select new Post
             {
                 Id = p.Id,
-                AuthorId = p.Author.Id,
+                Author = new Author
+                {
+                    Id = p.Author.Id,
+                    Pseudo = p.Author.Pseudo,
+                    AvatarId = p.Author.AvatarId,
+                },
                 ChallengeId = p.ChallengeId,
                 PublishedAt = p.PublishedAt,
                 Content = p.Content,
@@ -59,8 +65,7 @@ public class TimelineController(ILogger<TimelineController> logger, TimelineDbCo
                          This is the timeline with all posts of the author, sorted by date descending.
                          """)]
     public async Task<CursoredPostList> GetForAuthor(
-        [Description("Id of the author")]
-        Guid authorId,
+        [Description("Id of the author")] Guid authorId,
         [Description("Return posts posted before this id")]
         long? cursor = null,
         [Description("Number of elements to return, limited to 25")]
@@ -73,7 +78,12 @@ public class TimelineController(ILogger<TimelineController> logger, TimelineDbCo
             select new Post
             {
                 Id = p.Id,
-                AuthorId = p.Author.Id,
+                Author = new Author
+                {
+                    Id = p.Author.Id,
+                    Pseudo = p.Author.Pseudo,
+                    AvatarId = p.Author.AvatarId,
+                },
                 ChallengeId = p.ChallengeId,
                 PublishedAt = p.PublishedAt,
                 Content = p.Content,
