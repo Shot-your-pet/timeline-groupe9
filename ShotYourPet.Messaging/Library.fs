@@ -37,10 +37,9 @@ type MessageService
 
                 let connectionFactory = ConnectionFactory()
                 connectionFactory.Uri <- Uri(connectionString)
+                connectionFactory.ConsumerDispatchConcurrency <- uint16 256 // TODO: thread safety (worker pattern or event bus)
                 let! connection = connectionFactory.CreateConnectionAsync(cancellationToken = stoppingToken)
                 let! channel = connection.CreateChannelAsync(cancellationToken = stoppingToken)
-
-                do! channel.BasicQosAsync(0u, uint16 1, false, stoppingToken)
 
                 let! publicationQueue = getPublicationQueue rabbitMqConfiguration channel stoppingToken
                 let! userRpcClient = getUserQueue rabbitMqConfiguration channel stoppingToken logger
@@ -54,7 +53,6 @@ type MessageService
                         consumer,
                         cancellationToken = stoppingToken
                     )
-                    |> Async.AwaitTask
 
                 service <- Some(MessageScopedService(connection, logger))
 
