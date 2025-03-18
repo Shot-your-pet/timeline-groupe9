@@ -45,7 +45,7 @@ type MessageService
                 let! publicationQueue = getPublicationQueue rabbitMqConfiguration channel stoppingToken
                 let! userRpcClient = getUserQueue rabbitMqConfiguration channel stoppingToken logger
 
-                let consumer = ParsingConsumer(channel, logger, timelineDbContext)
+                let consumer = ParsingConsumer(channel, logger, timelineDbContext, userRpcClient)
 
                 let! _ =
                     channel.BasicConsumeAsync(

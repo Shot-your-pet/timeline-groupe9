@@ -1,6 +1,7 @@
 namespace ShotYourPet.Messaging
 
 open System
+open System.Collections.Concurrent
 open System.Text.Json
 open System.Threading
 open System.Threading.Tasks
@@ -8,11 +9,13 @@ open Microsoft.Extensions.Configuration
 open Microsoft.Extensions.Logging
 open RabbitMQ.Client
 open ShotYourPet.Database
+open ShotYourPet.Messaging.Interfaces
 open ShotYourPet.Messaging.Model
 open ShotYourPet.Messaging.DbUtils
 
 module private Client =
-    type ParsingConsumer(channel: IChannel, logger: ILogger, timelineDbContext: TimelineDbContext) =
+    type ParsingConsumer
+        (channel: IChannel, logger: ILogger, timelineDbContext: TimelineDbContext, userRpcClient: UserRpcClient) =
         inherit AsyncDefaultBasicConsumer(channel)
 
         override this.HandleBasicDeliverAsync(_, _, _, _, _, _, body, cancellationToken) =
@@ -26,6 +29,7 @@ module private Client =
                     | Some(EventContent.NewPublication(e)) ->
                         do!
                             timelineDbContext.AddPost(
+                                userRpcClient,
                                 e.Id,
                                 e.AuthorId,
                                 e.ChallengeId,
@@ -47,7 +51,7 @@ module private Client =
         let callbackMap =
             ConcurrentDictionary<string, TaskCompletionSource<UserInformation>>()
 
-        override this.HandleBasicDeliverAsync(_, _, _, _, _, props, body, cancellationToken) =
+        override this.HandleBasicDeliverAsync(_, tag, _, _, _, props, body, cancellationToken) =
             match props.CorrelationId |> Option.ofObj with
             | Some correlationId when correlationId.Length <> 0 ->
                 let found, value = callbackMap.TryRemove(correlationId)
@@ -61,40 +65,41 @@ module private Client =
                         value.SetException e
             | _ -> ()
 
-            Task.CompletedTask
+            task { do! channel.BasicAckAsync(tag, false, cancellationToken) }
 
-        member public this.QueryInformationAsync(userId: Guid, cancellationToken: CancellationToken) =
-            task {
-                let correlationKey = Guid.NewGuid().ToString()
+        interface IUserRpcClient with
+            member this.QueryInformationAsync userId cancellationToken =
+                task {
+                    let correlationKey = Guid.NewGuid().ToString()
 
-                let props = BasicProperties(CorrelationId = correlationKey, ReplyTo = respondQueue)
+                    let props = BasicProperties(CorrelationId = correlationKey, ReplyTo = respondQueue)
 
-                let completionSource =
-                    TaskCompletionSource<UserInformation>(TaskCreationOptions.RunContinuationsAsynchronously)
+                    let completionSource =
+                        TaskCompletionSource<UserInformation>(TaskCreationOptions.RunContinuationsAsynchronously)
 
-                if not (callbackMap.TryAdd(correlationKey, completionSource)) then
-                    failwith "Failed to register callback for result"
+                    if not (callbackMap.TryAdd(correlationKey, completionSource)) then
+                        failwith "Failed to register callback for result"
 
-                let content =
-                    JsonSerializer.SerializeToUtf8Bytes<UserQuery>({ IdKeycloak = userId })
+                    let content =
+                        JsonSerializer.SerializeToUtf8Bytes<UserQuery>({ IdKeycloak = userId })
 
-                do!
-                    channel.BasicPublishAsync(
-                        queryExchange,
-                        queryQueue,
-                        body = content,
-                        cancellationToken = cancellationToken,
-                        mandatory = true,
-                        basicProperties = props
-                    )
+                    do!
+                        channel.BasicPublishAsync(
+                            queryExchange,
+                            queryQueue,
+                            body = content,
+                            cancellationToken = cancellationToken,
+                            mandatory = true,
+                            basicProperties = props
+                        )
 
-                use _ =
-                    cancellationToken.Register(fun () ->
-                        callbackMap.TryRemove correlationKey |> ignore
-                        completionSource.SetCanceled())
+                    use _ =
+                        cancellationToken.Register(fun () ->
+                            callbackMap.TryRemove correlationKey |> ignore
+                            completionSource.SetCanceled())
 
-                return! completionSource.Task
-            }
+                    return! completionSource.Task
+                }
 
 
     type MessageScopedService(connection: IConnection, logger: ILogger) =
@@ -204,7 +209,7 @@ module private Client =
             let rpcClient =
                 UserRpcClient(channel, exchangeName, queryQueue.QueueName, respondQueue.QueueName, logger)
 
-            let! _ = channel.BasicConsumeAsync(respondQueue.QueueName, true, rpcClient, stoppingToken)
+            let! _ = channel.BasicConsumeAsync(respondQueue.QueueName, false, rpcClient, stoppingToken)
 
             return rpcClient
         }

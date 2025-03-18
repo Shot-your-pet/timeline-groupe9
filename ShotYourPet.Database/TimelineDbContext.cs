@@ -16,6 +16,10 @@ public class Author
     [DatabaseGenerated(DatabaseGeneratedOption.None)]
     public Guid Id { get; init; }
 
+    public required string Pseudo { get; init; } = null!;
+
+    public long? AvatarId { get; init; }
+
     public ICollection<Post> Posts { get; init; } = null!;
 }
 

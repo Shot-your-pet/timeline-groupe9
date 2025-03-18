@@ -5,18 +5,29 @@ open System.Runtime.CompilerServices
 open System.Threading
 open Microsoft.FSharp.Core
 open ShotYourPet.Database
+open ShotYourPet.Messaging.Interfaces
 
 type internal TimelineDbContextExt =
     [<Extension>]
     static member FindOrCreateAuthorAsync
-        (timelineDbContext: TimelineDbContext, authorId: Guid, cancellationToken: CancellationToken)
-        =
+        (
+            timelineDbContext: TimelineDbContext,
+            userRpcClient: IUserRpcClient,
+            authorId: Guid,
+            cancellationToken: CancellationToken
+        ) =
         task {
             let! maybeAuthor = timelineDbContext.Authors.FindAsync(authorId, cancellationToken)
 
             match maybeAuthor with
             | null ->
-                let entity = timelineDbContext.Authors.Add(Author(Id = authorId))
+                let! user = userRpcClient.QueryInformationAsync authorId cancellationToken
+
+                let entity =
+                    timelineDbContext.Authors.Add(
+                        Author(Id = authorId, Pseudo = user.Pseudo, AvatarId = (user.IdAvatar |> Option.toNullable))
+                    )
+
                 return entity.Entity
             | s -> return s
         }
@@ -25,6 +36,7 @@ type internal TimelineDbContextExt =
     static member AddPost
         (
             timelineDbContext: TimelineDbContext,
+            userRpcClient: IUserRpcClient,
             postId: int64,
             authorId: Guid,
             challengeId: int64,
@@ -37,7 +49,7 @@ type internal TimelineDbContextExt =
             let! existing = timelineDbContext.Posts.FindAsync(postId, cancellationToken)
 
             if existing = null then
-                let! author = timelineDbContext.FindOrCreateAuthorAsync(authorId, cancellationToken)
+                let! author = timelineDbContext.FindOrCreateAuthorAsync(userRpcClient, authorId, cancellationToken)
 
                 timelineDbContext.Posts.AddRange(
                     Post(
