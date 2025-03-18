@@ -54,8 +54,7 @@ type MessageService
                 let! connection = connectionFactory.CreateConnectionAsync(cancellationToken = stoppingToken)
                 let! channel = connection.CreateChannelAsync(cancellationToken = stoppingToken)
 
-
-                let! queue = channel.QueueDeclareAsync(queueName, true, false, false, cancellationToken = stoppingToken)
+                do! channel.BasicQosAsync(0u, uint16 1, false, stoppingToken)
 
                 // No need to bind if exchange is default
                 if exchangeName <> "" then
@@ -67,19 +66,17 @@ type MessageService
                             autoDelete = false,
                             cancellationToken = stoppingToken
                         )
+                let! publicationQueue = getPublicationQueue rabbitMqConfiguration channel stoppingToken
 
-                    do!
-                        channel.QueueBindAsync(
-                            queue.QueueName,
-                            exchangeName,
-                            routingKey,
-                            cancellationToken = stoppingToken
-                        )
-
-                let consumer = Client.ParsingConsumer(channel, logger, timelineDbContext)
+                let consumer = ParsingConsumer(channel, logger, timelineDbContext)
 
                 let! _ =
-                    channel.BasicConsumeAsync(queue.QueueName, true, consumer, cancellationToken = stoppingToken)
+                    channel.BasicConsumeAsync(
+                        publicationQueue.QueueName,
+                        true,
+                        consumer,
+                        cancellationToken = stoppingToken
+                    )
                     |> Async.AwaitTask
 
                 service <- Some(MessageScopedService(connection, logger))
