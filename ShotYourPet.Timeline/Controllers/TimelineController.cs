@@ -36,7 +36,7 @@ public class TimelineController(ILogger<TimelineController> logger, TimelineDbCo
                 {
                     Id = p.Author.Id,
                     Pseudo = p.Author.Pseudo,
-                    AvatarId = p.Author.AvatarId,
+                    AvatarId = p.Author.AvatarId
                 },
                 ChallengeId = p.ChallengeId,
                 PublishedAt = p.PublishedAt,
@@ -82,7 +82,7 @@ public class TimelineController(ILogger<TimelineController> logger, TimelineDbCo
                 {
                     Id = p.Author.Id,
                     Pseudo = p.Author.Pseudo,
-                    AvatarId = p.Author.AvatarId,
+                    AvatarId = p.Author.AvatarId
                 },
                 ChallengeId = p.ChallengeId,
                 PublishedAt = p.PublishedAt,

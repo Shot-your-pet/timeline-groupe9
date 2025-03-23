@@ -31,7 +31,7 @@ public record Post
 
     [JsonPropertyName("challenge_id")]
     [Description("Id of the challenge associated with the post")]
-    public required long ChallengeId { [UsedImplicitly] get; init; }
+    public required Guid ChallengeId { [UsedImplicitly] get; init; }
 
     [JsonPropertyName("published_at")]
     [Description("Publication date of the post")]

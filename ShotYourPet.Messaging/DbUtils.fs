@@ -39,7 +39,7 @@ type internal TimelineDbContextExt =
             userRpcClient: IUserRpcClient,
             postId: int64,
             authorId: Guid,
-            challengeId: int64,
+            challengeId: Guid,
             content: string | null,
             publishedAt: DateTimeOffset,
             imageId: int64,

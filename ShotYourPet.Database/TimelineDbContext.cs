@@ -31,7 +31,7 @@ public class Post
 
     [Required] public Author Author { get; init; } = null!;
 
-    public long ChallengeId { get; init; }
+    public Guid ChallengeId { get; init; }
 
     public string? Content { get; init; }
 

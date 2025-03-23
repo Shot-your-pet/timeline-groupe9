@@ -11,7 +11,7 @@ type NewPublication =
       [<JsonPropertyName("author_id")>]
       AuthorId: Guid
       [<JsonPropertyName("challenge_id")>]
-      ChallengeId: int64
+      ChallengeId: Guid
       [<JsonPropertyName("date")>]
       Date: DateTimeOffset
       [<JsonPropertyName("content")>]

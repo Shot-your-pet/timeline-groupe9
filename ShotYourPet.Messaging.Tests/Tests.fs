@@ -18,7 +18,7 @@ type PublishingEventTests() =
             "content": {
                 "id": 1,
                 "author_id": "6eb6c444-fdf8-415d-b815-fb89469ad214",
-                "challenge_id": 42,
+                "challenge_id": "42b6c444-fdf8-415d-b815-fb89469ad214",
                 "date": "2023-10-01T12:00:00Z",
                 "content": "A new publication",
                 "image_id": 123
@@ -34,7 +34,7 @@ type PublishingEventTests() =
         | EventContent.NewPublication pub ->
             Assert.Equal(1L, pub.Id)
             Assert.Equal(Guid.Parse("6eb6c444-fdf8-415d-b815-fb89469ad214"), pub.AuthorId)
-            Assert.Equal(42L, pub.ChallengeId)
+            Assert.Equal(Guid.Parse("42b6c444-fdf8-415d-b815-fb89469ad214"), pub.ChallengeId)
             Assert.Equal(DateTimeOffset.Parse("2023-10-01T12:00:00Z"), pub.Date)
             Assert.Equal("A new publication", pub.Content)
             Assert.Equal(123L, pub.ImageId)
