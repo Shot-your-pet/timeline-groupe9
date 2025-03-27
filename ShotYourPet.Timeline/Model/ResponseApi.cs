@@ -13,7 +13,7 @@ public record ResponseApi<T>
     [Description("The http stastus code of the response")]
     public required int Code { get; init; }
 
-    [JsonPropertyName("code")]
+    [JsonPropertyName("message")]
     [Description("The message for the response")]
     public required string? Message { get; init; }
 }
