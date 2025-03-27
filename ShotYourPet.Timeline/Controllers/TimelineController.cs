@@ -100,7 +100,7 @@ public class TimelineController(ILogger<TimelineController> logger, TimelineDbCo
         var size = Math.Clamp(limit, 0, 25) + 1;
         var list = await query.Take(size).ToListAsync();
 
-        var totalSize = context.Posts.Count();
+        var totalSize = (from p in context.Posts where p.Author.Id == authorId select p).Count();
 
         var res = new CursoredPostList
         {
