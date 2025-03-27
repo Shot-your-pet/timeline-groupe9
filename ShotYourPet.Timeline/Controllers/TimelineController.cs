@@ -20,7 +20,7 @@ public class TimelineController(ILogger<TimelineController> logger, TimelineDbCo
                          Get the default timeline.
                          This is the timeline with all posts, sorted by date descending.
                          """)]
-    public async Task<CursoredPostList> Get(
+    public async Task<ResponseApi<CursoredPostList>> Get(
         [Description("Return posts posted before this id")]
         long? cursor = null,
         [Description("Number of elements to return, limited to 25")]
@@ -49,12 +49,19 @@ public class TimelineController(ILogger<TimelineController> logger, TimelineDbCo
 
         var totalSize = context.Posts.Count();
 
-        return new CursoredPostList
+        var res = new CursoredPostList
         {
             Size = size == list.Count ? list.Count - 1 : list.Count,
             TotalSize = totalSize,
             NextCursor = size == list.Count ? list.Skip(size - 1).FirstOrDefault()?.Id : null,
             Content = list.Count == size ? list[..^1] : list
+        };
+
+        return new ResponseApi<CursoredPostList>()
+        {
+            Content = res,
+            Code = 200,
+            Message = null
         };
     }
 
@@ -64,7 +71,7 @@ public class TimelineController(ILogger<TimelineController> logger, TimelineDbCo
                          Get post list of an author.
                          This is the timeline with all posts of the author, sorted by date descending.
                          """)]
-    public async Task<CursoredPostList> GetForAuthor(
+    public async Task<ResponseApi<CursoredPostList>> GetForAuthor(
         [Description("Id of the author")] Guid authorId,
         [Description("Return posts posted before this id")]
         long? cursor = null,
@@ -95,12 +102,19 @@ public class TimelineController(ILogger<TimelineController> logger, TimelineDbCo
 
         var totalSize = context.Posts.Count();
 
-        return new CursoredPostList
+        var res = new CursoredPostList
         {
             Size = size == list.Count ? list.Count - 1 : list.Count,
             TotalSize = totalSize,
             NextCursor = size == list.Count ? list.Skip(size - 1).FirstOrDefault()?.Id : null,
             Content = list.Count == size ? list[..^1] : list
+        };
+
+        return new ResponseApi<CursoredPostList>()
+        {
+            Content = res,
+            Code = 200,
+            Message = null
         };
     }
 }
