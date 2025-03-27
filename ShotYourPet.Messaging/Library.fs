@@ -10,6 +10,7 @@ open Microsoft.Extensions.Logging
 open RabbitMQ.Client
 open ShotYourPet.Database
 open ShotYourPet.Messaging.Client
+open ShotYourPet.Messaging.Listeners
 
 
 type MessageService
@@ -42,7 +43,7 @@ type MessageService
                 let! channel = connection.CreateChannelAsync(cancellationToken = stoppingToken)
 
                 let! publicationQueue = getPublicationQueue rabbitMqConfiguration channel stoppingToken
-                let! userRpcClient = getUserQueue rabbitMqConfiguration channel stoppingToken logger
+                let! userRpcClient = getUserQueue rabbitMqConfiguration channel stoppingToken
 
                 let consumer = ParsingConsumer(channel, logger, timelineDbContext, userRpcClient)
 

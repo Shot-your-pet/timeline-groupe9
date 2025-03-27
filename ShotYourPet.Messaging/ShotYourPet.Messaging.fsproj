@@ -10,6 +10,7 @@
         <Compile Include="Model.fs"/>
         <Compile Include="Interfaces.fs"/>
         <Compile Include="DbUtils.fs"/>
+        <Compile Include="Listeners.fs"/>
         <Compile Include="Client.fs"/>
         <Compile Include="Library.fs"/>
     </ItemGroup>
