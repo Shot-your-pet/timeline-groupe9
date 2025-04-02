@@ -24,11 +24,13 @@ public class TimelineController(ILogger<TimelineController> logger, TimelineDbCo
         [Description("Return posts posted before this id")]
         long? cursor = null,
         [Description("Number of elements to return, limited to 25")]
-        int limit = 25)
+        int limit = 25,
+        [Description("Filter by challenge")] Guid? challengeId = null)
+
     {
         var query = from p in context.Posts
             orderby p.Id descending
-            where cursor == null || p.Id <= cursor
+            where (cursor == null || p.Id <= cursor) && (challengeId == null || p.ChallengeId == challengeId)
             select new Post
             {
                 Id = p.Id,
@@ -47,7 +49,7 @@ public class TimelineController(ILogger<TimelineController> logger, TimelineDbCo
         var size = Math.Clamp(limit, 0, 25) + 1;
         var list = await query.Take(size).ToListAsync();
 
-        var totalSize = context.Posts.Count();
+        var totalSize = context.Posts.Count(p => challengeId == null || p.ChallengeId == challengeId);
 
         var res = new CursoredPostList
         {

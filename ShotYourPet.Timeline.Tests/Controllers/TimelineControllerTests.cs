@@ -14,12 +14,12 @@ using Xunit.Abstractions;
 namespace ShotYourPet.Timeline.Tests.Controllers;
 
 [TestSubject(typeof(TimelineController))]
-public class TimelineControllerTest
+public class TimelineControllerTests
 {
     private readonly TimelineDbContext _dbContext;
     private readonly TimelineController _controller;
 
-    public TimelineControllerTest(ITestOutputHelper helper)
+    public TimelineControllerTests()
     {
         var connection = new SqliteConnection("DataSource=:memory:");
         connection.Open();
@@ -165,6 +165,95 @@ public class TimelineControllerTest
 
 
         result = await _controller.Get(result.Content.NextCursor);
+        Assert.Equal(200, result.Code);
+        Assert.Null(result.Message);
+        Assert.Equal(50, result.Content.TotalSize);
+        Assert.Equal(25, result.Content.Size);
+        Assert.Null(result.Content.NextCursor);
+        Assert.Equal(Enumerable.Range(0, 25).OrderDescending().Select(s => new Model.Post
+        {
+            Author = new Model.Author()
+            {
+                Id = authorId,
+                Pseudo = "foo",
+                AvatarId = null
+            },
+            Content = $"foo {s}",
+            ChallengeId = challengeId,
+            PublishedAt = publishedAt,
+            ImageId = imageId,
+            Id = s
+        }).ToList(), result.Content.Content);
+    }
+
+    [Fact]
+    public async Task GetWithChallenge_FullCursor_ReturnOk()
+    {
+        await _dbContext.Database.EnsureDeletedAsync();
+        await _dbContext.Database.EnsureCreatedAsync();
+
+        var authorId = Guid.NewGuid();
+        var challengeId = Guid.NewGuid();
+        var otherChallengeId = Guid.NewGuid();
+        var publishedAt = DateTime.UtcNow;
+        var imageId = 10;
+
+        var author = new Author
+        {
+            Id = authorId,
+            Pseudo = "foo"
+        };
+
+
+        _dbContext.Authors.Add(author);
+        for (var i = 0; i < 50; i++)
+            _dbContext.Posts.Add(new Post
+            {
+                Author = author,
+                Content = $"foo {i}",
+                ChallengeId = challengeId,
+                PublishedAt = publishedAt,
+                ImageId = imageId,
+                Id = i
+            });
+
+
+        for (var i = 0; i < 50; i++)
+            _dbContext.Posts.Add(new Post
+            {
+                Author = author,
+                Content = $"foo {i}",
+                ChallengeId = otherChallengeId,
+                PublishedAt = publishedAt,
+                ImageId = imageId,
+                Id = 5000 + i
+            });
+
+        await _dbContext.SaveChangesAsync();
+
+        var result = await _controller.Get(challengeId: challengeId);
+        Assert.Equal(200, result.Code);
+        Assert.Null(result.Message);
+        Assert.Equal(50, result.Content.TotalSize);
+        Assert.Equal(25, result.Content.Size);
+        Assert.Equal(24, result.Content.NextCursor);
+        Assert.Equal(Enumerable.Range(25, 25).OrderDescending().Select(s => new Model.Post
+        {
+            Author = new Model.Author()
+            {
+                Id = authorId,
+                Pseudo = "foo",
+                AvatarId = null
+            },
+            Content = $"foo {s}",
+            ChallengeId = challengeId,
+            PublishedAt = publishedAt,
+            ImageId = imageId,
+            Id = s
+        }).ToList(), result.Content.Content);
+
+
+        result = await _controller.Get(result.Content.NextCursor, challengeId: challengeId);
         Assert.Equal(200, result.Code);
         Assert.Null(result.Message);
         Assert.Equal(50, result.Content.TotalSize);
