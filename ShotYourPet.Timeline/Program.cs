@@ -18,16 +18,16 @@ builder.Services.AddDbContext<TimelineDbContext>(
         x => x.MigrationsAssembly("ShotYourPet.Migrations")));
 
 builder.Services.AddCors(cors => cors
-    .AddPolicy("ShotYourPet", policy => policy
+    .AddDefaultPolicy(policy => policy
         .AllowAnyOrigin()
         .AllowAnyMethod()
-        .AllowAnyHeader()));
+        .AllowAnyHeader()
+    ));
 
 builder.Services.AddHostedService<MessageService>();
 
 var app = builder.Build();
-
-app.UseCors("ShotYourPet");
+app.UseCors();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment()) app.MapOpenApi();
