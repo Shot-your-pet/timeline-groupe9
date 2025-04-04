@@ -6,13 +6,10 @@ open System.Text.Json
 open System.Threading.Tasks
 open Microsoft.Extensions.Logging
 open RabbitMQ.Client
-open ShotYourPet.Database
 open ShotYourPet.Messaging.Interfaces
 open ShotYourPet.Messaging.Model
-open ShotYourPet.Messaging.DbUtils
 
-type ParsingConsumer
-    (channel: IChannel, logger: ILogger, timelineDbContext: TimelineDbContext, userRpcClient: UserRpcClient) =
+type ParsingConsumer(channel: IChannel, logger: ILogger, eventQueue: EventQueue) =
     inherit AsyncDefaultBasicConsumer(channel)
 
     override this.HandleBasicDeliverAsync(_, _, _, _, _, _, body, cancellationToken) =
@@ -23,18 +20,7 @@ type ParsingConsumer
                     |> Option.ofObj
                     |> Option.map _.Content
                 with
-                | Some(EventContent.NewPublication(e)) ->
-                    do!
-                        timelineDbContext.AddPost(
-                            userRpcClient,
-                            e.Id,
-                            e.AuthorId,
-                            e.ChallengeId,
-                            e.Content,
-                            e.Date,
-                            e.ImageId,
-                            cancellationToken
-                        )
+                | Some(EventContent.NewPublication(e)) -> do! postPublicationEvent eventQueue e
                 | Some value -> failwithf $"Not implemented : %A{value}"
                 | None -> ()
             with e ->

@@ -10,6 +10,7 @@ open Microsoft.Extensions.Logging
 open RabbitMQ.Client
 open ShotYourPet.Database
 open ShotYourPet.Messaging.Client
+open ShotYourPet.Messaging.Interfaces
 open ShotYourPet.Messaging.Listeners
 
 
@@ -17,11 +18,8 @@ type MessageService
     (configuration: IConfiguration, logger: ILogger<MessageService>, serviceScopeFactory: IServiceScopeFactory) =
     let scope = serviceScopeFactory.CreateScope()
 
-    let timelineDbContext =
-        scope.ServiceProvider.GetRequiredService<TimelineDbContext>()
 
-
-    let mutable service: Option<Client.MessageScopedService> = None
+    let mutable service: Option<MessageScopedService> = None
 
     interface IHostedService with
         override this.StartAsync(stoppingToken: CancellationToken) =
@@ -45,7 +43,9 @@ type MessageService
                 let! publicationQueue = getPublicationQueue rabbitMqConfiguration channel stoppingToken
                 let! userRpcClient = getUserQueue rabbitMqConfiguration channel stoppingToken
 
-                let consumer = ParsingConsumer(channel, logger, timelineDbContext, userRpcClient)
+                let eventQueue = newEventQueue ()
+
+                let consumer = ParsingConsumer(channel, logger, eventQueue)
 
                 let! _ =
                     channel.BasicConsumeAsync(
@@ -55,7 +55,9 @@ type MessageService
                         cancellationToken = stoppingToken
                     )
 
-                service <- Some(MessageScopedService(connection, logger))
+
+                let dbContext = scope.ServiceProvider.GetRequiredService<TimelineDbContext>()
+                service <- Some(MessageScopedService(connection, logger, eventQueue, userRpcClient, dbContext))
 
                 ()
             }

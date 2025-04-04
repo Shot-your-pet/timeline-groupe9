@@ -6,16 +6,50 @@ open System.Threading.Tasks
 open Microsoft.Extensions.Configuration
 open Microsoft.Extensions.Logging
 open RabbitMQ.Client
+open ShotYourPet.Database
+open ShotYourPet.Messaging.Interfaces
 open ShotYourPet.Messaging.Listeners
+open ShotYourPet.Messaging.DbUtils
 
 module private Client =
-    type MessageScopedService(connection: IConnection, logger: ILogger) =
+    type MessageScopedService
+        (
+            connection: IConnection,
+            logger: ILogger,
+            eventQueue: EventQueue,
+            userRpcClient: UserRpcClient,
+            timelineDbContext: TimelineDbContext
+        ) =
+        let cancellationTokenSource = new CancellationTokenSource()
+
+        let insertToDbTask =
+            task {
+                let token = cancellationTokenSource.Token
+                let reader = eventQueue.NewPublicationChannel.Reader
+
+                while not token.IsCancellationRequested do
+                    let! newPublication = reader.ReadAsync()
+
+                    do!
+                        timelineDbContext.AddPost(
+                            userRpcClient,
+                            newPublication.Id,
+                            newPublication.AuthorId,
+                            newPublication.ChallengeId,
+                            newPublication.Content,
+                            newPublication.Date,
+                            newPublication.ImageId,
+                            token
+                        )
+            }
+
         member this.StopAsync token =
             task { do! connection.CloseAsync(cancellationToken = token) }
 
         interface IAsyncDisposable with
             member this.DisposeAsync() =
                 task {
+                    cancellationTokenSource.Dispose()
                     logger.LogWarning "Dispose"
                     do! connection.DisposeAsync()
                 }
