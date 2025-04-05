@@ -1,8 +1,10 @@
 name: package
+
 on: 
   push:
     branches:
       - 'main'
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -11,35 +13,53 @@ jobs:
       packages: write
       id-token: write
       attestations: write
+
     steps:
       - uses: actions/checkout@v4
+
       - name: Setup dotnet
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '9.x'
           cache: true
           cache-dependency-path: "**/packages.lock.json"
+
       - name: Display dotnet version
         run: dotnet --version
+
       - name: Install dependencies
         run: dotnet restore
+
       - name: Build
         run: dotnet build
+
       - name: Test with the dotnet CLI
         run: dotnet test
+
       - name: Build artifacts
         run: dotnet publish "ShotYourPet.Timeline/ShotYourPet.Timeline.csproj" -c Release -o build /p:UseAppHost=false
+
       - name: Log in to the Container registry
         uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@369eb591f429131d6889c46b94e711f089e6ca96
         with:
           images: ghcr.io/${{ github.repository_owner }}/timeline
+
+      # -- AJOUT 1 : installation de QEMU (émulation ARM) --
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      # -- AJOUT 2 : activation de Buildx (pour builder plusieurs arches) --
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
       - name: Build and push Docker images
         id: push
         uses: docker/build-push-action@48aba3b46d1b1fec4febb7c5d0c644b249a11355
@@ -47,9 +67,11 @@ jobs:
           context: .
           file: Dockerfile
           push: true
+          # On ajoute "platforms" pour builder linux/amd64 et linux/arm64
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
       - name: Generate artifact attestation
         uses: actions/attest-build-provenance@7668571508540a607bdfd90a87a560489fe372eb
         with:
