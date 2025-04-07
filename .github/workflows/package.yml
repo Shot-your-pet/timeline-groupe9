@@ -58,7 +58,7 @@ jobs:
 
       # -- AJOUT 2 : activation de Buildx (pour builder plusieurs arches) --
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
 
       - name: Build and push Docker images
         id: push
